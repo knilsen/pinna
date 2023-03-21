@@ -5,15 +5,21 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 
 	"golang.org/x/net/html"
 )
 
+/* func getsite (url string) {
+
+} */
+
 func main() {
 
-	s := "https://home.treasury.gov"
-	//s := "https://home.treasury.gov/news/press-releases/statements-remarks"
+	s := os.Args[1]
+	// "https://home.treasury.gov"
+	// "https://home.treasury.gov/news/press-releases/statements-remarks"
 	u, err := url.Parse(s)
 	if err != nil {
 		fmt.Println(err)
@@ -22,8 +28,8 @@ func main() {
 	domain := strings.Join([]string{u.Scheme, u.Host}, "://")
 	subs := []string{}
 	paths := strings.Split(u.Path, "/")
-	walks := []string{}
 	subs = append(subs, paths[1:]...)
+	walks := []string{}
 
 	if len(subs) > 0 {
 		for i := len(subs); i >= 1; i-- {
@@ -64,8 +70,8 @@ func main() {
 		}
 		headers := []string{"Content-Language", "Content-Type", "Last-Modified"}
 		for _, i := range headers {
-			h, ok := resp.Header[i]
-			if ok {
+			h, head := resp.Header[i]
+			if head {
 				fmt.Printf("%s: %s\n", i, h[0])
 			} else {
 				fmt.Printf("%s: Not found in response\n", i)
@@ -78,6 +84,7 @@ func main() {
 			fmt.Printf("Content type is %s not html\n", ct)
 		} else {
 			tokzr := html.NewTokenizer(resp.Body)
+			var hrefs int
 			for {
 				ttype := tokzr.Next()
 				if ttype == html.ErrorToken {
@@ -95,18 +102,19 @@ func main() {
 					if token.Data == "title" {
 						ttype = tokzr.Next()
 						if ttype == html.TextToken {
-							fmt.Println(tokzr.Token().Data)
+							fmt.Printf("Title: %s\n", tokzr.Token().Data)
 						}
 					} else {
 						for _, i := range token.Attr {
 							if i.Key == "href" {
-								fmt.Println(i.Val)
+								hrefs++
+								//fmt.Println(i.Val)
 							}
-
 						}
 					}
 				}
 			}
+			fmt.Printf("hrefs: %d\n", hrefs)
 		}
 	}
 }
